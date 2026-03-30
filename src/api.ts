@@ -3,11 +3,11 @@ import { io } from 'socket.io-client';
 
 const API_URL =
   (import.meta as any).env.VITE_API_URL ||
-  `http://${window.location.hostname}:5000/api`;
+  ((import.meta as any).env.PROD ? '/api' : `http://${window.location.hostname}:5000/api`);
 
 const SOCKET_URL =
   (import.meta as any).env.VITE_SOCKET_URL ||
-  `http://${window.location.hostname}:5000`;
+  ((import.meta as any).env.PROD ? window.location.origin : `http://${window.location.hostname}:5000`);
 
 export const socket = io(SOCKET_URL);
 

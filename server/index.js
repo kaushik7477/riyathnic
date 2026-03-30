@@ -110,7 +110,7 @@ console.log(distPath);
 app.use(express.static(distPath));
 
 // Serve index.html for all other routes
-app.get('/', (_, res) => {
+app.get('*', (_, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
