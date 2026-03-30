@@ -109,8 +109,8 @@ console.log(distPath);
 
 app.use(express.static(distPath));
 
-// Serve index.html for all other routes (Express 5 compatibility)
-app.get('/*', (_, res) => {
+// Serve index.html for all other routes (Express 5 Compatibility)
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
