@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+@keyframes text-mask-in {
+  0% {
+    clip-path: polygon(0 0, 0 0, 0 200%, 0 200%);
+    transform: translateX(0);
+    font-weight: 900;
+  }
+  50% {
+    clip-path: polygon(0 0, 110% 0, 110% 200%, 0 200%);
+    transform: translateX(1.5rem);
+    font-weight: 900;
+  }
+  100% {
+    clip-path: polygon(0 0, 110% 0, 110% 200%, 0 200%);
+    transform: translateX(0);
+  }
+}
+
+@keyframes text-mask-out {
+  0% {
+    clip-path: polygon(0 0, 110% 0, 110% 200%, 0 200%);
+    transform: translateX(0);
+  }
+  100% {
+    clip-path: polygon(110% 0, 110% 0, 110% 200%, 110% 200%);
+    transform: translateX(1.5rem);
+  }
+}
+
+.mask-in {
+  animation: 2s text-mask-in forwards cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.mask-out {
+  animation: 1s text-mask-out forwards cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Fallback/Forced classes for correct color rendering */
+.text-gold { color: #ffbf00 !important; }
+.bg-gold { background-color: #ffbf00 !important; }
+.border-gold { border-color: #ffbf00 !important; }
+
+.text-pink { color: #FFC0CB !important; }
+.bg-pink { background-color: #FFC0CB !important; }
+.border-pink { border-color: #FFC0CB !important; }
+
+/* Force base text colors to be golden if undefined */
+body {
+  color: #ffbf00;
+}
+
+/* Hide scrollbars for bespoke scroll containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

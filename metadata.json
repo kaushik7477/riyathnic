@@ -1,0 +1,9 @@
+
+{
+  "name": "Soul Stich E-Commerce",
+  "description": "A futuristic dark-themed clothing brand e-commerce platform with a comprehensive admin dashboard, real-time analytics, and seamless shopping experience.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
