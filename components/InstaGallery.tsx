@@ -2,13 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, ChevronDown } from 'lucide-react';
 import { Product } from '../types';
-import { getOptimizedUrl, getThumbnailUrl } from '../src/utils/cloudinary';
+import { getOptimizedUrl, getThumbnailUrl, getInstaVideoUrl } from '../src/utils/cloudinary';
 import SectionHeading from './SectionHeading';
 
 interface InstaItem {
   imageUrl: string;
   views: string;
   sku: string;
+  position?: number;
 }
 
 interface InstaGalleryProps {
@@ -27,7 +28,9 @@ const InstaGallery: React.FC<InstaGalleryProps> = ({ items, products, addToCart 
       </div>
 
       <div className="flex overflow-x-auto pb-8 gap-4 md:gap-6 no-scrollbar">
-        {items.map((item, index) => {
+        {[...items]
+          .sort((a, b) => (Number(a.position) || 999) - (Number(b.position) || 999))
+          .map((item, index) => {
           const product = products.find(p => p.sku?.trim().toLowerCase() === item.sku?.trim().toLowerCase());
           if (!product) return null;
 
@@ -37,13 +40,24 @@ const InstaGallery: React.FC<InstaGalleryProps> = ({ items, products, addToCart 
           return (
             <div key={index} className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col">
               <div className="relative aspect-[2/3] rounded-t-2xl overflow-hidden bg-zinc-100">
-                {/* Image */}
+                {/* Media Rendering */}
                 <Link to={`/product/${product.id}`} className="block w-full h-full">
-                  <img
-                    src={getOptimizedUrl(item.imageUrl)}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+                  {item.imageUrl.match(/\.(mp4|mov|webm|ogg)|video\/upload/i) ? (
+                    <video
+                      src={getInstaVideoUrl(item.imageUrl)}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <img
+                      src={getOptimizedUrl(item.imageUrl)}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  )}
                 </Link>
 
                 {/* Top Left: Discount Badge */}

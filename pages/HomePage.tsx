@@ -315,13 +315,13 @@ const HomePage: React.FC<HomePageProps> = ({ products, addToCart, toggleWishlist
           </div>
 
           {/* Products Container */}
-          <div className="lg:w-[75%] w-full relative group">
+          <div className="lg:w-[75%] w-full relative group/bestsellers">
 
             {/* Left Arrow */}
             {showLeftArrow && (
               <button
                 onClick={() => scrollBestSellers('left')}
-                className="absolute left-2 top-[35%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] flex items-center justify-center text-black hover:scale-110 hover:text-pink transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
+                className="absolute left-2 top-[35%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] flex items-center justify-center text-black hover:scale-110 hover:text-pink transition-all opacity-0 group-hover/bestsellers:opacity-100 hidden md:flex"
               >
                 <ChevronLeft className="w-6 h-6 ml-[-2px]" />
               </button>
@@ -331,7 +331,7 @@ const HomePage: React.FC<HomePageProps> = ({ products, addToCart, toggleWishlist
             {showRightArrow && (
               <button
                 onClick={() => scrollBestSellers('right')}
-                className="absolute right-2 top-[35%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] flex items-center justify-center text-black hover:scale-110 hover:text-pink transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
+                className="absolute right-2 top-[35%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] flex items-center justify-center text-black hover:scale-110 hover:text-pink transition-all opacity-0 group-hover/bestsellers:opacity-100 hidden md:flex"
               >
                 <ChevronRight className="w-6 h-6 ml-[2px]" />
               </button>

@@ -230,11 +230,11 @@ const Header: React.FC<HeaderProps> = ({ user, cartCount, wishlistCount, product
           {/* Wishlist Hidden on Mobile as requested */}
           <Link to="/wishlist" className="hidden md:block hover:text-pink transition-colors p-2 relative">
             <Heart className="w-6 h-6" />
-            {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-pink text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{wishlistCount}</span>}
+            {wishlistCount > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{wishlistCount}</span>}
           </Link>
           <Link to="/cart" className="hover:text-pink transition-colors p-2 relative">
             <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
-            {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-pink text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{cartCount}</span>}
+            {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">{cartCount}</span>}
           </Link>
         </div>
       </div>

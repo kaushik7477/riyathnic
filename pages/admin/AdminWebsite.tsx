@@ -65,11 +65,12 @@ const AdminWebsite: React.FC = () => {
   const [isUploadingPromo, setIsUploadingPromo] = useState(false);
 
   // Insta-Gallery Config
-  const [instaGalleryConfig, setInstaGalleryConfig] = useState<{ imageUrl: string, views: string, sku: string }[]>([]);
+  const [instaGalleryConfig, setInstaGalleryConfig] = useState<{ imageUrl: string, views: string, sku: string, position?: number }[]>([]);
   const [newInstaFile, setNewInstaFile] = useState<File | null>(null);
   const [newInstaUrl, setNewInstaUrl] = useState('');
   const [newInstaViews, setNewInstaViews] = useState('');
   const [newInstaSku, setNewInstaSku] = useState('');
+  const [newInstaPosition, setNewInstaPosition] = useState<number>(1);
   const [isUploadingInsta, setIsUploadingInsta] = useState(false);
 
   const [newReviewFile, setNewReviewFile] = useState<File | null>(null);
@@ -118,7 +119,14 @@ const AdminWebsite: React.FC = () => {
       if (webImgConfig) setWebImageConfig(webImgConfig);
       if (autoVidConfig) setAutoplayVideoConfig(autoVidConfig);
       if (doublePromo) setDoublePromoConfig(doublePromo);
-      if (instaGallery) setInstaGalleryConfig(instaGallery);
+      if (instaGallery) {
+        // Load and automatically normalize positions (fix duplicates/gaps)
+        const normalized = (instaGallery || [])
+          .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
+          .map((item: any, idx: number) => ({ ...item, position: idx + 1 }));
+        setInstaGalleryConfig(normalized);
+        setNewInstaPosition(normalized.length + 1);
+      }
     } catch (e) {
       // console.error("Failed to load website configuration data", e);
     }
@@ -339,11 +347,29 @@ const AdminWebsite: React.FC = () => {
         imageUrl = await uploadImage(newInstaFile);
       }
 
-      const newItem = { imageUrl, views: newInstaViews, sku: newInstaSku };
-      const updatedConfig = [...instaGalleryConfig, newItem];
+      const targetPos = Number(newInstaPosition) || (instaGalleryConfig.length + 1);
+      
+      // Shift existing items: if position >= targetPos, increase by 1
+      const shiftedConfig = instaGalleryConfig.map(item => {
+        const itemPos = item.position || 0;
+        return {
+          ...item,
+          position: itemPos >= targetPos ? itemPos + 1 : itemPos
+        };
+      });
 
+      const newItem = { 
+        imageUrl, 
+        views: newInstaViews, 
+        sku: newInstaSku, 
+        position: targetPos
+      };
+      
+      const updatedConfig = [...shiftedConfig, newItem].sort((a, b) => (a.position || 0) - (b.position || 0));
+      
       await updateWebsiteConfig('insta_gallery', updatedConfig);
       setInstaGalleryConfig(updatedConfig);
+      setNewInstaPosition(updatedConfig.length + 1);
 
       // Reset form
       setNewInstaFile(null);
@@ -358,10 +384,41 @@ const AdminWebsite: React.FC = () => {
     }
   };
 
+  const handleSwapInstaPosition = async (sourceIndex: number, targetPosition: number) => {
+    const sourceItem = instaGalleryConfig[sourceIndex];
+    const oldPosition = sourceItem.position || (sourceIndex + 1);
+    
+    // Find the item that currently has the target position
+    const targetItemIndex = instaGalleryConfig.findIndex(item => (item.position || 0) === targetPosition);
+    
+    let updatedConfig = [...instaGalleryConfig];
+    
+    if (targetItemIndex !== -1) {
+      // Swap!
+      updatedConfig[targetItemIndex].position = oldPosition;
+    }
+    
+    updatedConfig[sourceIndex].position = targetPosition;
+    
+    // Final sort to be sure
+    updatedConfig = updatedConfig.sort((a, b) => (a.position || 999) - (b.position || 999));
+    
+    try {
+      await updateWebsiteConfig('insta_gallery', updatedConfig);
+      setInstaGalleryConfig(updatedConfig);
+    } catch (e) {
+      alert("Failed to swap positions.");
+    }
+  };
+
   const handleDeleteInsta = async (index: number) => {
     if (!window.confirm("Are you sure you want to delete this gallery item?")) return;
 
-    const updatedConfig = instaGalleryConfig.filter((_, i) => i !== index);
+    // Filter out the deleted item and re-normalize positions
+    const updatedConfig = instaGalleryConfig
+      .filter((_, i) => i !== index)
+      .map((item, idx) => ({ ...item, position: idx + 1 }));
+      
     try {
       await updateWebsiteConfig('insta_gallery', updatedConfig);
       setInstaGalleryConfig(updatedConfig);
@@ -976,12 +1033,13 @@ const AdminWebsite: React.FC = () => {
             <h3 className="text-xl font-bold uppercase">Add New Insta-Gallery Post</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Image Upload / Link */}
+              {/* Media Upload / Link */}
               <div className="space-y-4">
-                <label className="block text-xs font-bold uppercase text-zinc-500">Image Source (Upload or Link)</label>
+                <label className="block text-xs font-bold uppercase text-zinc-500">Media Source (Image/Video Upload)</label>
                 <div className="relative">
                   <input
                     type="file"
+                    accept="image/*,video/*"
                     onChange={e => {
                       setNewInstaFile(e.target.files?.[0] || null);
                       if (e.target.files?.[0]) setNewInstaUrl('');
@@ -990,9 +1048,15 @@ const AdminWebsite: React.FC = () => {
                   />
                   <div className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg border border-dashed transition-all ${newInstaFile ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-zinc-700 hover:border-white text-zinc-400'}`}>
                     <Upload className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase">{newInstaFile ? newInstaFile.name : 'Choose Image File'}</span>
+                    <span className="text-xs font-bold uppercase">{newInstaFile ? newInstaFile.name : 'Choose Media File'}</span>
                   </div>
                 </div>
+                {newInstaFile && newInstaFile.type.startsWith('video/') && (
+                  <div className="mt-2 text-[10px] text-zinc-500 font-bold uppercase flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    Video selected for upload
+                  </div>
+                )}
                 {/* <div className="flex items-center gap-2">
                   <div className="h-px bg-white/10 flex-grow"></div>
                   <span className="text-[10px] font-bold uppercase text-zinc-600">OR</span>
@@ -1010,20 +1074,32 @@ const AdminWebsite: React.FC = () => {
                 /> */}
               </div>
 
-              {/* Views and SKU */}
+              {/* Views, SKU, and Position */}
               <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-zinc-500 mb-2">Display Views (e.g., 2.7K, 74)</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
-                      <Eye className="w-4 h-4" />
-                    </span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-zinc-500 mb-2">Views (e.g., 2.7K)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
+                        <Eye className="w-4 h-4" />
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="e.g. 2.7K"
+                        value={newInstaViews}
+                        onChange={e => setNewInstaViews(e.target.value)}
+                        className="w-full bg-zinc-900 border border-white/10 pl-11 pr-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-zinc-500 mb-2">Position</label>
                     <input
-                      type="text"
-                      placeholder="e.g. 2.7K"
-                      value={newInstaViews}
-                      onChange={e => setNewInstaViews(e.target.value)}
-                      className="w-full bg-zinc-900 border border-white/10 pl-11 pr-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                      type="number"
+                      min="1"
+                      value={newInstaPosition}
+                      onChange={e => setNewInstaPosition(Number(e.target.value))}
+                      className="w-full bg-zinc-900 border border-white/10 px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-green-500"
                     />
                   </div>
                 </div>
@@ -1057,29 +1133,60 @@ const AdminWebsite: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex justify-between items-center mt-12 mb-4 px-1">
+            <h3 className="text-xl font-bold uppercase">Manage Gallery Order</h3>
+            <span className="text-[10px] items-center gap-1 font-bold bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-full uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block mr-1"></span>
+              Positions are saved automatically on swap
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {instaGalleryConfig.map((item, index) => {
               const product = products.find(p => p.sku === item.sku);
               return (
-                <div key={index} className="bg-zinc-900 border border-white/5 rounded-xl overflow-hidden relative group aspect-[3/4]">
-                  <img src={item.imageUrl} className="w-full h-full object-cover" alt="Gallery" />
+                <div key={index} className="bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden relative group aspect-[3/4] flex flex-col shadow-2xl">
+                  {/* Media Content */}
+                  <div className="relative flex-grow overflow-hidden">
+                    {item.imageUrl.match(/\.(mp4|mov|webm|ogg)|video\/upload/i) ? (
+                      <video src={item.imageUrl} className="w-full h-full object-cover" muted />
+                    ) : (
+                      <img src={item.imageUrl} className="w-full h-full object-cover" alt="Gallery" />
+                    )}
 
-                  {/* Overlay for Info */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
-                    <div className="flex justify-between items-start">
-                      <span className="bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded">
+                    {/* Overlay for Stats and Delete (Top) */}
+                    <div className="absolute top-0 inset-x-0 bg-gradient-to-b from-black/60 to-transparent p-3 flex justify-between items-start">
+                      <span className="bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded shadow-lg">
                         {item.views} VIEWS
                       </span>
-                      <button onClick={() => handleDeleteInsta(index)} className="bg-red-500 p-2 rounded-full text-white hover:bg-red-600 transition-colors">
+                      <button onClick={() => handleDeleteInsta(index)} className="bg-red-500 p-2 rounded-full text-white hover:bg-red-600 transition-colors shadow-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="bg-black/80 p-2 rounded-lg border border-white/10">
-                      <p className="text-[10px] font-bold text-zinc-400 uppercase">Linked SKU</p>
-                      <p className="text-xs font-black text-white truncate">{item.sku}</p>
-                      {product && <p className="text-[10px] text-green-500 truncate">{product.name}</p>}
+                    {/* Info (Bottom) */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-6">
+                      <div className="bg-black/40 backdrop-blur-sm p-2 rounded-lg border border-white/5">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase">Linked SKU: <span className="text-white font-black">{item.sku}</span></p>
+                        {product && <p className="text-[10px] text-green-500 truncate">{product.name}</p>}
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Position Dropdown Footer */}
+                  <div className="bg-red-600 text-white p-2.5 flex items-center justify-center gap-3">
+                    <span className="text-[11px] font-black uppercase tracking-tighter">Position:</span>
+                    <select
+                      value={item.position || (index + 1)}
+                      onChange={(e) => handleSwapInstaPosition(index, Number(e.target.value))}
+                      className="bg-red-700/50 text-white text-xs font-black px-3 py-1 rounded-md border border-white/20 focus:outline-none focus:ring-1 focus:ring-white/50 cursor-pointer appearance-none text-center min-w-[50px]"
+                    >
+                      {Array.from({ length: instaGalleryConfig.length }, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num} className="bg-zinc-900 text-white">
+                          {num}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               );
